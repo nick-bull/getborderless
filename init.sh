@@ -173,12 +173,12 @@ clone_submodules() {
     print_warning "Cloning all submodules..."
     auth_github_cli
     
-    yarn clone:all
+    (cd "$BORDERLESS_PATH" && yarn clone:all)
 }
 
 install_dependencies() {
     print_warning "Installing dependencies..."
-    yarn
+    (cd "$BORDERLESS_PATH" && yarn)
 }
 
 install_docker() {
