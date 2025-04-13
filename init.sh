@@ -1,0 +1,226 @@
+#!/bin/bash
+
+# This script will:
+# - Install all required dependencies (Homebrew, Node.js, Yarn, AWS CLI, Docker)
+# - Configure GitHub authentication
+# - Set up AWS SSO
+# - Clone all submodules
+# - Install dependencies
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+BORDERLESS_REPO="https://github.com/getborderless/borderless"
+BORDERLESS_PATH="$HOME/Documents/borderless"
+
+print_message() { echo -e "${2}${1}${NC}"; }
+print_error() { echo -e "${RED}${1}${NC}"; }
+print_success() { echo -e "${GREEN}${1}${NC}"; }
+print_warning() { echo -e "${YELLOW}${1}${NC}"; }
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+install_homebrew() {
+    if command_exists brew; then
+        print_success "Homebrew is already installed"
+        return
+    fi
+    
+    print_warning "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Add Homebrew to PATH for the current session
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+}
+
+install_github_cli() {
+    if command_exists gh; then
+        print_success "GitHub CLI is already installed"
+        return
+    fi
+    
+    print_warning "Installing GitHub CLI..."
+    brew install gh
+}
+
+auth_github_keys() {
+    # if test -n "$GP_READ_PAT"; then
+    #     print_message "GitHub Packages authentication is already configured" "$GREEN"
+    #     return
+    # fi
+
+    print_warning "Setting up GitHub Packages authentication..."
+    echo "You'll need a GitHub classic token to install dependencies."
+    echo "The classic token must have these scopes:"
+    echo "  - read:packages (to read packages)"
+    echo "  - admin:public_key (to add auth keys)"
+    echo "  - read:org (to validate tokens)"
+    echo "  - repo (to access private repositories)"
+    echo
+    echo "Click here to generate: https://github.com/settings/tokens/new?scopes=read:packages,repo,admin:public_key,read:org&description=borderless"
+    echo
+    read -p "Once generated, paste your GitHub token: " github_token
+    
+    if test -z "$github_token"; then
+        print_error "GitHub token cannot be empty. Please try again."
+        exit 1
+    fi
+    
+    # Create or update .npmrc
+    echo "//npm.pkg.github.com/:_authToken=$github_token" > ~/.npmrc
+    
+    # Add to shell rc file
+    echo "export GP_READ_PAT=\"$github_token\"" >> ~/.zshrc
+    export GP_READ_PAT="$github_token"
+
+    # Create key, add to github, configure ssh
+    ssh-keygen -t ed25519 -f ~/.ssh/borderless -N ""
+    gh ssh-key add ~/.ssh/borderless.pub --title "borderless"
+
+    # Configure
+    cp "$BORDERLESS_PATH" ~/.ssh/config
+}
+
+auth_github_cli() {
+    # if gh auth token > /dev/null 2>&1; then
+    #     print_success "GitHub SSH authentication is already configured"
+    #     return
+    # fi
+
+    print_warning "Please complete GitHub authentication in your browser"
+    echo  "$GP_READ_PAT" | 
+        gh auth login \
+        --with-token \
+        --git-protocol ssh \
+        --hostname github.com
+}
+
+clone_borderless() {
+    git clone "$BORDERLESS_REPO" 
+}
+
+install_node() {
+    if command_exists "nvm" || command_exists "node"; then
+        print_success "nvm or node.js already installed"
+        return
+    fi
+
+    print_warning "Installing NVM..."
+    brew install nvm
+    
+    # Create NVM directory
+    mkdir -p ~/.nvm
+    
+    # Add NVM to shell config
+    cat << EOF >> ~/.zshrc
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+EOF
+    
+    # Source NVM for current session
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+
+    print_warning "Installing Node.js stable..."
+    nvm install stable
+    nvm use stable
+}
+
+install_yarn() {
+    if command_exists yarn; then
+        print_success "Yarn is already installed"
+        return
+    fi
+    
+    print_warning "Installing Yarn..."
+    npm install -g yarn
+}
+
+install_aws_cli() {
+    if command_exists aws; then
+        print_success "AWS CLI is already installed"
+        return
+    fi
+    
+    print_warning "Installing AWS CLI..."
+    brew install awscli
+}
+
+configure_aws_cli() {
+    if [ -f ~/.aws/config ]; then
+        print_success "AWS CLI is already configured"
+        return
+    fi
+    
+    print_warning "Configuring AWS CLI..."
+    mkdir -p ~/.aws
+    
+    cp "$BORDERLESS_PATH/config/aws" ~/.aws/config
+}
+
+auth_aws_cli() {
+    if ! aws sts get-caller-identity --profile borderless-cdk > /dev/null 2&>1; then
+        print_warning "Please log in to AWS SSO in your browser"
+        aws sso login --profile borderless-cdk
+    fi
+}
+
+clone_submodules() {
+    print_warning "Cloning all submodules..."
+    auth_github_cli
+    
+    yarn clone:all
+}
+
+install_dependencies() {
+    print_warning "Installing dependencies..."
+    yarn
+}
+
+install_docker() {
+    if command_exists docker; then
+        print_success "Docker is already installed"
+        return
+    fi
+    
+    print_message "Installing Docker Desktop..."
+    brew install --cask docker
+    brew install docker-compose
+    print_warning "Please open Docker Desktop and complete the installation"
+}
+
+setup_env_files() {
+    print_message "Setting up environment files..."
+    touch .env.dev
+    print_warning "Please copy your .env and .env.local variables from 1Password to the appropriate service folders"
+}
+
+print_success "Starting Borderless local environment setup..."
+
+install_homebrew
+
+install_github_cli
+auth_github_keys
+auth_github_cli
+
+clone_borderless
+
+install_node
+install_yarn
+
+install_aws_cli
+auth_aws_cli
+configure_aws_cli
+
+clone_submodules
+
+install_dependencies
+setup_env_files
+
+install_docker
+
+print_success "Setup completed! You can now run './bin/local.sh' to start the local environment"
