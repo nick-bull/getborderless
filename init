@@ -23,17 +23,53 @@ print_warning() { echo -e "${YELLOW}${1}${NC}"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+log() {               
+  setopt localoptions no_monitor no_notify
+
+  local spin=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local i=1
+
+  local name=$1
+  shift
+  
+  ( "$@" ) >> ~/setup.log 2>&1 &
+  local cmd_pid=$!
+
+  while kill -0 $cmd_pid 2>/dev/null; do
+    printf "\r\e[1;37m[%s] %s\e[0m" $spin[i] "$name"
+    sleep 0.1
+    (( i = (i % ${#spin[@]}) + 1 ))
+  done       
+
+  wait $cmd_pid    
+  __status=$?
+  
+  printf "\r\033[K"                       
+  
+  if test $__status -eq 0; then                           
+    printf "\e[1;32m[✔] %s\e[0m\n" "$name"
+  else
+    printf "\e[1;31m[✖] %s (exit $__status)\e[0m\n" "$name"
+  fi
+}
+
+get_sudo() { sudo -v; }
+
 install_homebrew() {
     if command_exists brew; then
         print_success "Homebrew is already installed"
         return
     fi
     
-    print_warning "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    log "Homebrew installation" \
+      env NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Add Homebrew to PATH for the current session
     eval "$(/opt/homebrew/bin/brew shellenv)"
+    
+    # Setup in profile
+    echo >> ~/.zprofile
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 }
 
 install_github_cli() {
@@ -42,8 +78,8 @@ install_github_cli() {
         return
     fi
     
-    print_warning "Installing GitHub CLI..."
-    brew install gh
+    log "GitHub CLI installation" \
+      brew install gh
 }
 
 auth_github_keys() {
@@ -77,7 +113,8 @@ auth_github_keys() {
     export GP_READ_PAT="$github_token"
 
     # Create key, add to github, configure ssh
-    ssh-keygen -t ed25519 -f ~/.ssh/borderless -N ""
+    log "ssh key generation"\
+       ssh-keygen -t ed25519 -f ~/.ssh/borderless -N ""
 
     cat << EOF > $HOME/.ssh/config
 Host github.com
@@ -88,13 +125,21 @@ Host github.com
 EOF
     chmod 600 ~/.ssh/config
 
-    eval "$(ssh-agent -s)"
-    ssh-add ~/.ssh/borderless
+    log " - Restart ssh agent" \
+      eval "$(ssh-agent -s)"
+    log " - Add ssh key" \
+      ssh-add ~/.ssh/borderless
 
     # Prevent caching issues by refreshing scopes before adding - this won't be
     # necessary for usual use, but it was a PITA to debug this script without this
-    gh auth refresh -h github.com -s admin:public_key
-    gh ssh-key add ~/.ssh/borderless.pub --title "borderless"
+    log " - Refresh github scopes" \
+      gh auth refresh -h github.com -s admin:public_key
+    log " - Add ssh key to github" \
+      gh ssh-key add ~/.ssh/borderless.pub --title "borderless"
+    
+    # Auto-accept github.com as a trusted host
+    log " - Host github.com" \
+      ssh-keyscan github.com >> ~/.ssh/known_hosts
 }
 
 auth_github_cli() {
@@ -112,7 +157,8 @@ auth_github_cli() {
 }
 
 clone_borderless() {
-    git clone "$BORDERLESS_REPO" 
+    log "Borderless monorepo" \
+      git clone "$BORDERLESS_REPO" 
 }
 
 install_node() {
@@ -121,8 +167,8 @@ install_node() {
         return
     fi
 
-    print_warning "Installing NVM..."
-    brew install nvm
+    log "nvm installation" \
+      brew install nvm
     
     # Create NVM directory
     mkdir -p ~/.nvm
@@ -138,9 +184,7 @@ EOF
     export NVM_DIR="$HOME/.nvm"
     [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 
-    print_warning "Installing Node.js stable..."
-    nvm install stable
-    nvm use stable
+    log "- use node v20"  nvm install 20
 }
 
 install_yarn() {
@@ -149,8 +193,8 @@ install_yarn() {
         return
     fi
     
-    print_warning "Installing Yarn..."
-    npm install -g yarn
+    log "yarn installation" \
+      npm install -g yarn
 }
 
 install_aws_cli() {
@@ -159,8 +203,8 @@ install_aws_cli() {
         return
     fi
     
-    print_warning "Installing AWS CLI..."
-    brew install awscli
+    log "awscli installation" \
+      brew install awscli
 }
 
 configure_aws_cli() {
@@ -169,9 +213,7 @@ configure_aws_cli() {
         return
     fi
     
-    print_warning "Configuring AWS CLI..."
     mkdir -p ~/.aws
-    
     cp "$BORDERLESS_PATH/config/aws" ~/.aws/config
 }
 
@@ -183,15 +225,20 @@ auth_aws_cli() {
 }
 
 clone_submodules() {
-    print_warning "Cloning all submodules..."
     auth_github_cli
     
-    (cd "$BORDERLESS_PATH" && yarn clone:all)
+    (
+      cd "$BORDERLESS_PATH" &&
+        log "submodule cloning" \
+        yarn clone:all
+    )
 }
 
 install_dependencies() {
-    print_warning "Installing dependencies..."
-    (cd "$BORDERLESS_PATH" && yarn)
+    (
+      cd "$BORDERLESS_PATH" &&
+      log "- monorepo dependency installation" yarn
+    )
 }
 
 install_docker() {
@@ -200,19 +247,20 @@ install_docker() {
         return
     fi
     
-    print_message "Installing Docker Desktop..."
-    brew install --cask docker
-    brew install docker-compose
-    print_warning "Please open Docker Desktop and complete the installation"
+    log "docker installation" \ 
+      brew install --cask docker > /dev/null
+    log "docker-compose installation" \
+      brew install docker-compose
+      
+    echo
 }
 
-setup_env_files() {
-    print_message "Setting up environment files..."
-    touch .env.dev
-    print_warning "Please copy your .env and .env.local variables from 1Password to the appropriate service folders"
-}
+print_success "###"
+print_success "# Starting Borderless local environment setup..."
+print_success "###"
+echo
 
-print_success "Starting Borderless local environment setup..."
+get_sudo
 
 install_homebrew
 
@@ -230,10 +278,12 @@ auth_aws_cli
 configure_aws_cli
 
 clone_submodules
-
 install_dependencies
-setup_env_files
 
 install_docker
 
-print_success "Setup completed! You can now run './bin/local.sh' to start the local environment"
+echo
+print_success "###"
+print_success "# Setup completed!"
+print_success "# You can now run './bin/local.sh' to start the local environment"
+print_success "###"
