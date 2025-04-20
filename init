@@ -254,7 +254,7 @@ install_docker() {
         return
     fi
     
-    log "docker installation" \ 
+    log "docker installation" \
       brew install --cask docker
     log "docker-compose installation" \
       brew install docker-compose
