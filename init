@@ -136,8 +136,8 @@ EOF
 
     # Prevent caching issues by refreshing scopes before adding - this won't be
     # necessary for usual use, but it was a PITA to debug this script without this
-    log " - Refresh github scopes" \
-      gh auth refresh -h github.com -s admin:public_key
+    gh auth refresh -h github.com -s admin:public_key
+
     log " - Add ssh key to github" \
       gh ssh-key add ~/.ssh/borderless.pub --title "borderless"
     
