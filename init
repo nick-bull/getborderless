@@ -157,7 +157,7 @@ auth_github_cli() {
 
 clone_borderless() {
     log "Borderless monorepo" \
-      git clone "$BORDERLESS_REPO" 
+      git clone "$BORDERLESS_REPO" "$BORDERLESS_PATH"
 }
 
 install_node() {
