@@ -67,9 +67,12 @@ install_homebrew() {
     # Add Homebrew to PATH for the current session
     eval "$(/opt/homebrew/bin/brew shellenv)"
     
-    # Setup in profile
+    # Setup in profile and rc
     echo >> ~/.zprofile
     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+
+    echo >> ~/.zshrc
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
 }
 
 install_github_cli() {
@@ -218,8 +221,7 @@ configure_aws_cli() {
 
 auth_aws_cli() {
     if ! aws sts get-caller-identity --profile borderless-cdk > /dev/null 2&>1; then
-        print_warning "Please log in to AWS SSO in your browser"
-        aws sso login --profile borderless-cdk
+        log "AWS SSO" aws sso login --profile borderless-cdk
     fi
 }
 
