@@ -134,6 +134,7 @@ EOF
 
     # Prevent caching issues by refreshing scopes before adding - this won't be
     # necessary for usual use, but it was a PITA to debug this script without this
+    auth_github_cli
     gh auth refresh -h github.com -s admin:public_key
 
     log " - Add ssh key to github" \
