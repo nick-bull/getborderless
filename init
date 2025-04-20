@@ -159,6 +159,11 @@ auth_github_cli() {
 }
 
 clone_borderless() {
+    if test -d "$BORDERLESS_PATH"; then
+        print_success "Monorepo already cloned to $BORDERLESS_PATH"
+        return
+    if
+
     log "Borderless monorepo" \
       git clone "$BORDERLESS_REPO" "$BORDERLESS_PATH"
 }
