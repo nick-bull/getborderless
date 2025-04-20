@@ -36,7 +36,7 @@ log() {
   local cmd_pid=$!
 
   while kill -0 $cmd_pid 2>/dev/null; do
-    printf "\r\e[1;37m[%s] %s\e[0m" $spin[i] "$name"
+    printf "\r\e[1;30m[%s] %s\e[0m" $spin[i] "$name"
     sleep 0.1
     (( i = (i % ${#spin[@]}) + 1 ))
   done       
@@ -98,7 +98,9 @@ auth_github_keys() {
     echo
     echo "Click here to generate: https://github.com/settings/tokens/new?scopes=read:packages,repo,admin:public_key,read:org&description=borderless"
     echo
-    read -p "Once generated, paste your GitHub token: " github_token
+
+    print -n "Once generated, paste your GitHub token: "
+    read github_token
     
     if test -z "$github_token"; then
         print_error "GitHub token cannot be empty. Please try again."
