@@ -91,15 +91,10 @@ auth_github_keys() {
     fi
 
     print_warning "Setting up GitHub Packages authentication..."
-    echo "You'll need a GitHub classic token to install dependencies."
-    echo "The classic token must have these scopes:"
-    echo "  - read:packages (to read packages)"
-    echo "  - admin:public_key (to add auth keys)"
-    echo "  - read:org (to validate tokens)"
-    echo "  - repo (to access private repositories)"
-    echo
-    echo "Click here to generate: https://github.com/settings/tokens/new?scopes=read:packages,repo,admin:public_key,read:org&description=borderless"
-    echo
+    echo "You'll need a GitHub classic token for authorisation."
+    printf '\r\e[1;30mPress enter\e[1;0m to generate.'
+
+    open "https://github.com/settings/tokens/new?scopes=read:packages,repo,admin:public_key,read:org&description=borderless"
 
     print -n "Once generated, paste your GitHub token: "
     read github_token
@@ -218,7 +213,7 @@ configure_aws_cli() {
     fi
     
     mkdir -p ~/.aws
-    cp "$BORDERLESS_PATH/.config/aws" ~/.aws/config
+    cp "$BORDERLESS_PATH/config/aws" ~/.aws/config
 }
 
 auth_aws_cli() {
