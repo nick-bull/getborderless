@@ -192,7 +192,11 @@ EOF
     export NVM_DIR="$HOME/.nvm"
     [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 
-    log "- use node v20"  nvm install 20
+    log "- install node v20" \
+      nvm install 20
+
+    log "- use node v20" \
+      nvm use 20
 }
 
 install_yarn() {
