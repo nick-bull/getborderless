@@ -16,6 +16,8 @@ NC='\033[0m'
 BORDERLESS_REPO="git@github.com:getborderless/borderless.git"
 BORDERLESS_PATH="$HOME/Documents/borderless"
 
+mkdir_borderless() { mkdir "$BORDERLESS_PATH"; }
+
 print_message() { echo -e "${2}${1}${NC}"; }
 print_error() { echo -e "${RED}${1}${NC}"; }
 print_success() { echo -e "${GREEN}${1}${NC}"; }
@@ -216,7 +218,7 @@ configure_aws_cli() {
     fi
     
     mkdir -p ~/.aws
-    cp "$BORDERLESS_PATH/config/aws" ~/.aws/config
+    cp "$BORDERLESS_PATH/.config/aws" ~/.aws/config
 }
 
 auth_aws_cli() {
@@ -263,6 +265,7 @@ print_success "###"
 echo
 
 get_sudo
+mkdir_borderless
 
 install_homebrew
 
