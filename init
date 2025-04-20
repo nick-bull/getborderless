@@ -92,7 +92,9 @@ auth_github_keys() {
 
     print_warning "Setting up GitHub Packages authentication..."
     echo "You'll need a GitHub classic token for authorisation."
-    printf '\r\e[1;30mPress enter\e[1;0m to generate.'
+
+    printf '\r\e[1;30mPress enter\e[1;0m to generate.\n'
+    read
 
     open "https://github.com/settings/tokens/new?scopes=read:packages,repo,admin:public_key,read:org&description=borderless"
 
