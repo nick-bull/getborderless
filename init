@@ -141,8 +141,8 @@ EOF
       gh ssh-key add ~/.ssh/borderless.pub --title "borderless"
     
     # Auto-accept github.com as a trusted host
-    log " - Host github.com" \
-      ssh-keyscan github.com >> ~/.ssh/known_hosts
+    github_known_hosts() { ssh-keyscan github.com >> ~/.ssh/known_hosts; }
+    log " - Host github.com" github_known_hosts
 }
 
 auth_github_cli() {
