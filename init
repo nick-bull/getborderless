@@ -240,8 +240,7 @@ clone_submodules() {
     
     (
       cd "$BORDERLESS_PATH" &&
-        log "submodule cloning" \
-        yarn clone:all
+        log "submodule cloning" yarn clone:all
     )
 }
 
