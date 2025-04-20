@@ -227,7 +227,7 @@ configure_aws_cli() {
 
 auth_aws_cli() {
     if ! aws sts get-caller-identity --profile borderless-cdk > /dev/null 2&>1; then
-        log "AWS SSO" aws sso login --profile borderless-cdk
+        aws sso login --profile borderless-cdk
     fi
 }
 
