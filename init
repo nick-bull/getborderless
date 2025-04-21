@@ -23,30 +23,34 @@ print_warning() { echo -e "${YELLOW}${1}${NC}"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
-log() {               
+log() {          
   setopt localoptions no_monitor no_notify
+
+  local name=$1
+  shift
+  local logfile=~/setup.log
 
   local spin=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
   local i=1
 
-  local name=$1
-  shift
-  
-  ( "$@" ) >> ~/setup.log 2>&1 &
-  local cmd_pid=$!
+  {
+    while :; do
+      printf "\r\e[1;30m[%s] %s\e[0m" "${spin[i]}" "$name"
+      sleep 0.1
+      (( i = (i % "${#spin[@]}") + 1 ))
+    done
+  } &
+  local spinner_pid=$!
 
-  while kill -0 $cmd_pid 2>/dev/null; do
-    printf "\r\e[1;30m[%s] %s\e[0m" $spin[i] "$name"
-    sleep 0.1
-    (( i = (i % ${#spin[@]}) + 1 ))
-  done       
+  "$@" >> "$logfile" 2>&1
+  local __status=$?
 
-  wait $cmd_pid    
-  __status=$?
-  
-  printf "\r\033[K"                       
-  
-  if test $__status -eq 0; then                           
+  kill $spinner_pid 2>/dev/null
+  wait $spinner_pid 2>/dev/null
+
+  printf "\r\033[K"
+
+  if [[ $__status -eq 0 ]]; then
     printf "\e[1;32m[✔] %s\e[0m\n" "$name"
   else
     printf "\e[1;31m[✖] %s (exit $__status)\e[0m\n" "$name"
@@ -192,11 +196,7 @@ EOF
     export NVM_DIR="$HOME/.nvm"
     [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 
-    log "- install node v20" \
-      nvm install 20
-
-    log "- use node v20" \
-      nvm use 20
+    nvm install 20 > /dev/null
 }
 
 install_yarn() {
