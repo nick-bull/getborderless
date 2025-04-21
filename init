@@ -206,7 +206,7 @@ install_yarn() {
     fi
     
     log "yarn installation" \
-      npm install -g yarn
+      npm install -g yarn@latest
 }
 
 install_aws_cli() {
