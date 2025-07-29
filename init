@@ -16,6 +16,8 @@ NC='\033[0m'
 BORDERLESS_REPO="git@github.com:getborderless/borderless.git"
 BORDERLESS_PATH="$HOME/Documents/borderless"
 
+sudo_stat="/tmp/sudo_stat"
+
 print_message() { echo -e "${2}${1}${NC}"; }
 print_error() { echo -e "${RED}${1}${NC}"; }
 print_success() { echo -e "${GREEN}${1}${NC}"; }
