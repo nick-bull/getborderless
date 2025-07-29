@@ -265,6 +265,23 @@ install_docker() {
     echo
 }
 
+get_local_env() {
+    log "get local env" \
+      "$BORDERLESS_PATH"/bin/ssm-get.sh "local"
+}
+
+install_pg() {
+    brew install postgresql@14
+    brew services start postgresql@14
+}
+
+run_migrations() {
+    (
+      cd packages/db &&
+        docker-compose -f ../../docker-compose.yml run --rm flyway migrate
+    )
+}
+
 print_success "###"
 print_success "# Starting Borderless local environment setup..."
 print_success "###"
@@ -291,6 +308,11 @@ install_dependencies
 clone_submodules
 
 install_docker
+
+get_local_env
+
+install_pg
+run_migrations
 
 echo
 print_success "###"
