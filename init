@@ -318,6 +318,7 @@ configure_aws_cli
 
 install_dependencies
 clone_submodules
+yarn build
 
 install_docker
 
