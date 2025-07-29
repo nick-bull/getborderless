@@ -23,6 +23,20 @@ print_warning() { echo -e "${YELLOW}${1}${NC}"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+extend_sudo_session() {
+ touch $sudo_stat
+
+ while [ -f $sudo_stat ]; do
+  sudo -v
+  sleep 5
+ done &
+
+ trap close_sudo_session EXIT
+}
+close_sudo_session() {
+  test -f $sudo_stat && rm $sudo_stat
+}
+
 log() {          
   setopt localoptions no_monitor no_notify
 
@@ -288,6 +302,7 @@ print_success "###"
 echo
 
 get_sudo
+extend_sudo_session
 
 install_homebrew
 
