@@ -287,8 +287,8 @@ install_aws_cli
 auth_aws_cli
 configure_aws_cli
 
-clone_submodules
 install_dependencies
+clone_submodules
 
 install_docker
 
