@@ -290,10 +290,7 @@ install_pg() {
 }
 
 run_migrations() {
-    (
-      cd packages/db &&
-        docker-compose -f ../../docker-compose.yml run --rm flyway migrate
-    )
+    yarn up:db
 }
 
 print_success "###"
