@@ -289,6 +289,8 @@ get_local_env() {
 install_pg() {
     brew install postgresql@14
     brew services start postgresql@14
+
+    createuser -s postgres
 }
 
 run_migrations() {
