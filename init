@@ -281,9 +281,17 @@ install_docker() {
     echo
 }
 
+install_onepw() {
+    brew install --cask 1password
+}
+
 get_local_env() {
     log "get local env" \
       "$BORDERLESS_PATH"/bin/ssm-get.sh "local"
+}
+
+run_migrations() {
+    yarn up:db
 }
 
 install_pg() {
@@ -291,10 +299,6 @@ install_pg() {
     brew services start postgresql@14
 
     createuser -s postgres
-}
-
-run_migrations() {
-    yarn up:db
 }
 
 print_success "###"
@@ -330,6 +334,8 @@ get_local_env
 
 install_pg
 run_migrations
+
+install_onepw
 
 echo
 print_success "###"
